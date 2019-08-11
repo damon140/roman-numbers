@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.ArrayList;
 
 public class RomanNumbers {
+
+    private static final Map<String, Numeral> stringToNumeral = new HashMap();
 
     public static enum Numeral {
         I("I", 1),
@@ -18,22 +21,24 @@ public class RomanNumbers {
 
         // TODO: add >I< & other unusual forms
         ;
-
-        private final Map<String, Numeral> stringToNumeral = new HashMap();
-
+        
         private final int value;
 
         private Numeral(String characters, int value){
             this.value = value;
-            stringToNumeral.put(characters, this);
+            RomanNumbers.stringToNumeral.put(characters, this);
         }
 
         public int getValue() {
             return value;
         }
 
-        public boolean smallerThanOrEqual(Numeral other) {
-            return this.value <= other.value;
+        public boolean smallerThan(Numeral other) {
+            return this.value < other.value;
+        }
+
+        public boolean biggerThan(Numeral other) {
+            return this.value > other.value;
         }
 
         /**
@@ -42,46 +47,52 @@ public class RomanNumbers {
          * @param numeralString
          * @return
          */
-        public Optional<Numeral> fromNumberString(String numeralString) {
+        public static Optional<Numeral> toRomanNumeral(String numeralString) {
             return Optional.ofNullable(stringToNumeral.get(numeralString));
         }
 
-        // /**
-        //  * Find the index of a descending run of numeral from the start
-        //  * index. 
-        //  */
-        // public int descendingScan(int startIndex) {
-        //     start
-        //     for (Numeral curr : )
-        // }
+        // FIXME: unit test
+        public static List<Numeral> toRomanNumerals(String numeralsString) {
+            List<Numeral> numerals = new ArrayList(); 
 
+            // TODO: update this naive impl when adding multichar numerals
+            for (int index = 0; index < numeralsString.length(); index++) {
+                String numeralString = numeralsString.substring(index, index + 1);
+                Numeral numeral = stringToNumeral.get(numeralString);
+                if (null == numeral) {
+                    throw new IllegalArgumentException("Don't recognise numeral [" + numeralString + "].");
+                }
+                numerals.add(numeral);
+            }
+            
+            return numerals;
+        }
     }
 
-    // FIXME: roman number class?
+    // FIXME: roman number class
 
-    // FIXME: impl here
-    // public static int intFromString(String numerals) {
-    //     // FIXME: impl parse function for use here
-    //     return intFromList(numerals);
-    // }
+    public static int intFromString(String numerals) {
+        return intFromList(Numeral.toRomanNumerals(numerals));
+    }
 
+
+    //  I    V
+    //  only prev character needed??
     public static int intFromList(List<Numeral> numerals) {
         Optional<Numeral> prev = Optional.empty();
         int sum = 0;
         int index = 0;
 
         for (Numeral curr; index < numerals.size(); index++) {
-            
             curr = numerals.get(index);
+            sum += curr.getValue();
 
-            if (!prev.isPresent() || prev.get().smallerThanOrEqual(curr)) {
-                sum += curr.getValue();
-            } else {
-                // scan && sub list
-
-                // FIXME: Damon impl here
-                //intFromNum -= 
+            if (prev.isPresent() && prev.get().smallerThan(curr)) {
+                // do we need a backscan sequence detector for unusual varients?
+                sum -= 2 * prev.get().value;
             }
+
+            prev = Optional.of(curr);
         }
 
         return sum;
